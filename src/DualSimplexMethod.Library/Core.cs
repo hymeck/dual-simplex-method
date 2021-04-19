@@ -10,6 +10,16 @@ namespace DualSimplexMethod.Library
 {
     internal static class Core
     {
+        private static Vector<double> GetInitialY(Matrix<double> conditions, IList<int> basisIndices, Vector<double> objectionFunctionComponents)
+        {
+            var inversedBasisMatrix = GetBasisMatrix(conditions, basisIndices)
+                .Inverse();
+            
+            var basisObjectiveComponents = GetBasisObjectiveFunctionComponents(objectionFunctionComponents, basisIndices);
+            
+            return inversedBasisMatrix.Multiply(basisObjectiveComponents);
+        }
+        
         private static Vector<double> GetInitialFeasibleSolution(Matrix<double> conditions, IEnumerable<int> basisIndices, IList<double> basisPlan)
         {
             var plan = Vector<double>.Build.Dense(conditions.ColumnCount, value: 0d);
@@ -51,7 +61,7 @@ namespace DualSimplexMethod.Library
                 if (basisItem == negativeComponentIndex)
                 {
                     indexInBasisIndices = index;
-                    break; // it is not necessary to choose the first occurence
+                    break; // by the algo, it is not necessary to choose the first occurence
                 }
             }
             return indexInBasisIndices;
@@ -111,30 +121,17 @@ namespace DualSimplexMethod.Library
             Vector<double> objectionFunctionComponents,
             Vector<double> constraints)
         {
-            var iteration = 1;
-            var y = Vector<double>.Build.Dense(conditions.ColumnCount, 0d);
-            Vector<double> plan;
-
             var possibleIndices = Enumerable.Range(0, conditions.ColumnCount).ToArray();
+            
+            var y = GetInitialY(conditions, basisIndices, objectionFunctionComponents); // not efficient; but i don't give a fuck
             while (true)
             {
                 // build inversed basis matrix
                 var inversedBasisMatrix = GetBasisMatrix(conditions, basisIndices).Inverse();
 
-                // build vector that consists of basis objective function components
-                var basisObjectiveComponents =
-                    GetBasisObjectiveFunctionComponents(objectionFunctionComponents, basisIndices);
-
-                if (iteration == 1)
-                {
-                    // set initial value to y which equals to
-                    // product of inversed basis matrix and basis components of objective function 
-                    y = inversedBasisMatrix.Multiply(basisObjectiveComponents);
-                }
-
                 var basisPlan = inversedBasisMatrix.Multiply(constraints);
 
-                plan = GetInitialFeasibleSolution(conditions, basisIndices, basisPlan);
+                var plan = GetInitialFeasibleSolution(conditions, basisIndices, basisPlan);
 
                 // todo: add comment what it means 
                 if (plan.Minimum() >= 0)
@@ -162,8 +159,6 @@ namespace DualSimplexMethod.Library
 
                 basisIndices[indexInBasisIndices] = minSigmaIndex;
                 y += deltaY.Multiply(minSigma);
-
-                iteration++;
             }
         }
     }
