@@ -14,7 +14,8 @@ namespace DualSimplexMethod.Library
         
         public static Vector<double> GetBasisObjectiveFunctionComponents(Vector<double> objectionFunctionComponents, IEnumerable<int> basisIndices)
         {
-            var basisComponents = basisIndices.Select(index => objectionFunctionComponents[index]);
+            // var basisComponents = basisIndices.Select(index => objectionFunctionComponents[index]);
+            var basisComponents = basisIndices.Select(objectionFunctionComponents.At);
             return Vector<double>.Build.DenseOfEnumerable(basisComponents);
         }
         
