@@ -8,7 +8,7 @@ using static DualSimplexMethod.Library.BasisUtils; // GetBasisMatrix, GetBasisOb
 
 namespace DualSimplexMethod.Library
 {
-    public class Core
+    internal static class Core
     {
         private static Vector<double> GetInitialFeasibleSolution(Matrix<double> conditions, IEnumerable<int> basisIndices, IList<double> basisPlan)
         {
@@ -23,57 +23,54 @@ namespace DualSimplexMethod.Library
         
         private static int FindNegativeComponentIndex(IList<double> plan)
         {
-            // var negativeComponentIndex = -1;
-            // for (var i = 0; i < plan.Count; i++)
-            // {
-            //     if (plan[i] < 0)
-            //     {
-            //         negativeComponentIndex = i;
-            //         break; // optional. just choose first occurence
-            //     }
-            // }
-
-            var (negativeComponentIndex, _) = plan
-                .Select((item, index) => (index, item))
-                .Where((_, basisItem) => basisItem < 0)
-                .FirstOrDefault();
-
+            var negativeComponentIndex = 0;
+            for (var i = 0; i < plan.Count; i++)
+            {
+                if (plan[i] < 0)
+                {
+                    negativeComponentIndex = i;
+                    break; // optional break. so just choose first occurence
+                }
+            }
             return negativeComponentIndex;
+
+            // todo: shit, it does not work properly
+            // var (negativeComponentIndex, _) = plan
+            //     .Select((item, index) => (index, item))
+            //     .Where((_, basisItem) => basisItem < 0)
+            //     .FirstOrDefault();
+            //
+            // return negativeComponentIndex;
         }
         
         private static int FindIndexInBasisIndices(IEnumerable<int> basisIndices, int negativeComponentIndex)
         {
-            // var indexInBasisIndices = 0;
-            // foreach (var (index, basisItem) in basisIndices.Select((basisItem, index) => (index, basisItem)))
-            // {
-            //     if (basisItem == negativeComponentIndex)
-            //     {
-            //         indexInBasisIndices = index;
-            //         break; // it is not necessary to choose the first occurence
-            //     }
-            // }
-
-            var (indexInBasisIndices, _) = basisIndices
-                .Select((basisItem, index) => (index, basisItem)) // project item to item with index because we need to find out index 
-                .Where((_, basisItem) => basisItem == negativeComponentIndex) // match occurences 
-                .FirstOrDefault(); // it is not necessary to choose the first occurence
-
+            var indexInBasisIndices = 0;
+            foreach (var (index, basisItem) in basisIndices.Select((basisItem, index) => (index, basisItem)))
+            {
+                if (basisItem == negativeComponentIndex)
+                {
+                    indexInBasisIndices = index;
+                    break; // it is not necessary to choose the first occurence
+                }
+            }
             return indexInBasisIndices;
+            
+            // todo: may be this crap also does not work correctly
+            // var (indexInBasisIndices, _) = basisIndices
+            //     .Select((basisItem, index) => (index, basisItem)) // project item to item with index because we need to find out index 
+            //     .Where((_, basisItem) => basisItem == negativeComponentIndex) // match occurences 
+            //     .FirstOrDefault(); // it is not necessary to choose the first occurence
+            //
+            // return indexInBasisIndices;
         }
         
-        private static Vector<double> GetMu(int[] nonBasisIndices, Vector<double> deltaY, Matrix<double> conditions)
+        private static Vector<double> GetMu(IEnumerable<int> nonBasisIndices, Vector<double> deltaY, Matrix<double> conditions)
         {
             var dotProducts = nonBasisIndices
                 .Select(conditions.Column)
                 .Select(deltaY.DotProduct);
             
-            // var u = Vector<double>.Build.DenseOfEnumerable(nonBasisIndices.Select(index => (double) index));
-            //
-            // for (var i = 0; i < u.Count; i++)
-            // {
-            //     u[i] = deltaY.DotProduct(conditions.Column(nonBasisIndices[i]));
-            // }
-
             return Vector<double>.Build.DenseOfEnumerable(dotProducts);
         }
         
@@ -163,7 +160,7 @@ namespace DualSimplexMethod.Library
 
                 var (minSigma, minSigmaIndex) = GetMinSigmaData(sigma, nonBasisIndices);
 
-                basisIndices[minSigmaIndex] = minSigmaIndex;
+                basisIndices[indexInBasisIndices] = minSigmaIndex;
                 y += deltaY.Multiply(minSigma);
 
                 iteration++;

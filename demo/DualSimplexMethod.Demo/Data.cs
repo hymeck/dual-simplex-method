@@ -16,10 +16,23 @@ namespace DualSimplexMethod.Demo
             var basisIndices = new HashSet<int>(new[] {2, 3});
 
             var holder12 = new InputDataHolder(conditions, objectiveFunction, constraints, basisIndices);
+            
+            conditions = new double[,]
+            {
+                {-2, 1, 1, 1},
+                {3, 4, 0, 1}
+            };
+            objectiveFunction = new double[] {-6, 3, 0, 1};
+            constraints = new double[] {-9, -6};
+            basisIndices = new HashSet<int>(new[] {2, 3});
+
+            var holder23 = new InputDataHolder(conditions, objectiveFunction, constraints, basisIndices);
+            
 
             var variants = new Dictionary<int, InputDataHolder>
             {
                 {12, holder12},
+                {23, holder23}
             };
             
             return variants;

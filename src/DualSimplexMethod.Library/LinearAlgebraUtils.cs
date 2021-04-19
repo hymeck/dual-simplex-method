@@ -3,7 +3,7 @@ using MathNet.Numerics.LinearAlgebra;
 
 namespace DualSimplexMethod.Library
 {
-    public static class LinearAlgebraUtils
+    internal static class LinearAlgebraUtils
     {
         public static Matrix<double> CreateMatrixFromColumns(IEnumerable<Vector<double>> columns) => 
             Matrix<double>.Build.DenseOfColumns(columns);

@@ -4,7 +4,7 @@ using MathNet.Numerics.LinearAlgebra;
 
 namespace DualSimplexMethod.Library
 {
-    public static class BasisUtils
+    internal static class BasisUtils
     {
         public static Matrix<double> GetBasisMatrix(Matrix<double> conditions, IEnumerable<int> basisIndices)
         {
