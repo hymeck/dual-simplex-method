@@ -31,15 +31,15 @@ namespace DualSimplexMethod.Library
             var basisIndices = new List<int>(_basisIndices);
 
             var iteration = 1;
-            Vector<double> y;
+            var y = Vector<double>.Build.Dense(conditions.ColumnCount, 0d);
             Vector<double> plan;
             while (true)
             {
-                Matrix<double> basisMatrix = GetBasisMatrix(conditions, basisIndices);
+                var basisMatrix = GetBasisMatrix(conditions, basisIndices);
                 
                 var inversedBasisMatrix = basisMatrix.Inverse();
 
-                Vector<double> basisObjectiveComponents =
+                var basisObjectiveComponents =
                     GetBasisObjectiveFunctionComponents(objectionFunctionComponents, basisIndices);
 
                 if (iteration == 1)
@@ -48,7 +48,7 @@ namespace DualSimplexMethod.Library
                 }
 
                 var basisPlan = inversedBasisMatrix.Multiply(constraints);
-                plan = Vector<double>.Build.Dense(conditions.RowCount, value: 0d);
+                plan = Vector<double>.Build.Dense(conditions.ColumnCount, value: 0d);
                 foreach (var (index, basisItem) in basisIndices.Select((basisItem, index) => (index, basisItem)))
                 {
                     plan[basisItem] = basisPlan[index];
@@ -66,13 +66,55 @@ namespace DualSimplexMethod.Library
                         break; // optional. just choose first occurence
                     }
                 }
+
+                var indexInBasisIndices = 0;
+
+                foreach (var (index, basisItem) in basisIndices.Select((basisItem, index) => (index, basisItem)))
+                {
+                    if (basisItem == negativeComponentIndex)
+                    {
+                        indexInBasisIndices = index;
+                        break; // optional. just choose first occurence
+                    }
+                }
+
+                var deltaY = inversedBasisMatrix.Row(indexInBasisIndices);
+
+                int[] nonBasisIndices = Enumerable.Range(0, conditions.ColumnCount).Except(basisIndices).ToArray();
+
+                var u = Vector<double>.Build.DenseOfEnumerable(nonBasisIndices.Select(index => (double) index));
+
+                for (var i = 0; i < u.Count; i++)
+                {
+                    u[i] = deltaY.DotProduct(conditions.Column(nonBasisIndices[i]));
+                }
                 
-                
+                if (u.Minimum() >= 0)
+                    return DualResult.Empty;
+
+                var sigma = Vector<double>.Build.DenseOfVector(u);
+
+                for (var i = 0; i < sigma.Count; i++)
+                {
+                    if (u[i] >= 0)
+                        sigma[i] = double.MaxValue;
+                    else
+                    {
+                        var nonBasisIndex = nonBasisIndices[i];
+                        var product = conditions.Column(nonBasisIndex).DotProduct(y);
+                        sigma[i] =
+                            (objectionFunctionComponents[nonBasisIndex] - product) / u[i];
+                    }
+                }
+
+                var minSigma = sigma.Minimum();
+                var minSigmaIndex = nonBasisIndices[sigma.MinimumIndex()];
+                basisIndices[minSigmaIndex] = minSigmaIndex;
+
+                y += deltaY.Multiply(minSigma);
 
                 iteration++;
             }
-            
-            return DualResult.Create(plan);
         }
 
         public static Vector<double> GetBasisObjectiveFunctionComponents(Vector<double> objectionFunctionComponents, IEnumerable<int> basisIndices)

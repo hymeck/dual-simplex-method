@@ -5,4 +5,10 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Reference Include="DualSimplexMethod.Library, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\libs\DualSimplexMethod.Library.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
